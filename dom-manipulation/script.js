@@ -134,6 +134,19 @@ function displayQuotes(filteredQuotes = quotes) {
     quoteList.appendChild(li);
   });
 }
+function syncQuotes() {
+  // 1. جلب البيانات من السيرفر الوهمي (mock API)
+  fetch('https://jsonplaceholder.typicode.com/posts') // مثال لسيرفر وهمي
+    .then(response => response.json())
+    .then(serverQuotes => {
+      // 2. تحديث localStorage بالبيانات الجديدة
+      localStorage.setItem('quotes', JSON.stringify(serverQuotes));
+
+      // 3. إشعار المستخدم أو تحديث الواجهة
+      alert("Quotes synchronized with server!");
+    })
+    .catch(error => console.error("Error syncing quotes:", error));
+}
 
 // === Populate Categories in Dropdown ===
 function populateCategories() {
