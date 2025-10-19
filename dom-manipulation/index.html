@@ -45,3 +45,215 @@
     <script src="script.js"></script>
   </body>
 </html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dynamic Quote Generator — Web Storage & JSON</title>
+  <style>
+    :root {
+      font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    body {
+      max-width: 900px;
+      margin: 36px auto;
+      padding: 24px;
+      background: #f7f7f9;
+      border-radius: 10px;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(10, 10, 10, 0.06);
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    input[type=text] {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    button {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 0;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #6b7280;
+    }
+    #quote {
+      font-size: 1.1rem;
+      margin: 18px 0;
+      padding: 12px;
+      border-left: 4px solid #2563eb;
+      background: #fbfdff;
+      border-radius: 6px;
+    }
+    small.hint {
+      color: #6b7280;
+    }
+    footer {
+      margin-top: 16px;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Dynamic Quote Generator</h1>
+    <p class="hint">
+      Add, show, export and import quotes. Quotes are stored using
+      <strong>localStorage</strong>. The last shown quote (session-only)
+      is stored in <strong>sessionStorage</strong>.
+    </p>
+
+    <div id="quote">Click <em>Show Random Quote</em> to begin.</div>
+
+    <div class="controls">
+      <input id="quoteInput" type="text" placeholder="Enter a new quote" />
+      <button id="addBtn">Add Quote</button>
+      <button id="showBtn">Show Random Quote</button>
+      <button id="clearBtn" class="secondary">Clear All</button>
+    </div>
+
+    <div class="controls" style="margin-top: 12px">
+      <button id="exportBtn">Export JSON</button>
+      <label>
+        <input id="importFile" type="file" accept=".json" style="display: none" />
+        <button id="importBtn" class="secondary">Import JSON</button>
+      </label>
+      <button id="restoreDefaults" class="secondary">Restore Defaults</button>
+    </div>
+
+    <p style="margin-top: 12px">
+      <small>
+        Quotes stored: <span id="count">0</span> • Last shown (session):
+        <span id="lastShown">—</span>
+      </small>
+    </p>
+
+    <footer>
+      Tip: JSON files should be an array of strings or array of objects like
+      {"text":"...","author":"..."}.
+    </footer>
+  </div>
+
+  <script>
+    // ========== VARIABLES ==========
+    let quotes = JSON.parse(localStorage.getItem("quotes")) || [
+      "The best way to predict the future is to create it.",
+      "Do something today that your future self will thank you for.",
+      "Success is not final, failure is not fatal: it is the courage to continue that counts."
+    ];
+
+    const quoteDisplay = document.getElementById("quote");
+    const quoteInput = document.getElementById("quoteInput");
+    const count = document.getElementById("count");
+    const lastShown = document.getElementById("lastShown");
+
+    // ========== SAVE TO LOCAL STORAGE ==========
+    function saveQuotes() {
+      localStorage.setItem("quotes", JSON.stringify(quotes));
+      count.textContent = quotes.length;
+    }
+
+    // ========== SHOW RANDOM QUOTE ==========
+    function showRandomQuote() {
+      if (quotes.length === 0) {
+        quoteDisplay.textContent = "No quotes available!";
+        return;
+      }
+      const index = Math.floor(Math.random() * quotes.length);
+      quoteDisplay.textContent = quotes[index];
+      sessionStorage.setItem("lastQuoteIndex", index);
+      lastShown.textContent = index + 1;
+    }
+
+    // ========== ADD QUOTE ==========
+    document.getElementById("addBtn").addEventListener("click", () => {
+      const newQuote = quoteInput.value.trim();
+      if (!newQuote) return alert("Please enter a quote!");
+      quotes.push(newQuote);
+      saveQuotes();
+      quoteInput.value = "";
+      alert("Quote added successfully!");
+    });
+
+    // ========== CLEAR ALL ==========
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (confirm("Are you sure you want to delete all quotes?")) {
+        quotes = [];
+        saveQuotes();
+        quoteDisplay.textContent = "All quotes cleared!";
+      }
+    });
+
+    // ========== RESTORE LAST QUOTE (SESSION) ==========
+    const lastIndex = sessionStorage.getItem("lastQuoteIndex");
+    if (lastIndex !== null && quotes[lastIndex]) {
+      quoteDisplay.textContent = quotes[lastIndex];
+      lastShown.textContent = parseInt(lastIndex) + 1;
+    }
+    saveQuotes();
+
+    // ========== SHOW RANDOM QUOTE BUTTON ==========
+    document.getElementById("showBtn").addEventListener("click", showRandomQuote);
+
+    // ========== EXPORT JSON ==========
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "quotes.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ========== IMPORT JSON ==========
+    document.getElementById("importFile").addEventListener("change", (event) => {
+      const fileReader = new FileReader();
+      fileReader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            quotes.push(...imported);
+            saveQuotes();
+            alert("Quotes imported successfully!");
+          } else {
+            alert("Invalid JSON format!");
+          }
+        } catch {
+          alert("Error reading JSON file!");
+        }
+      };
+      fileReader.readAsText(event.target.files[0]);
+    });
+
+    // ========== RESTORE DEFAULTS ==========
+    document.getElementById("restoreDefaults").addEventListener("click", () => {
+      quotes = [
+        "The best way to predict the future is to create it.",
+        "Do something today that your future self will thank you for.",
+        "Success is not final, failure is not fatal: it is the courage to continue that counts."
+      ];
+      saveQuotes();
+      alert("Default quotes restored!");
+    });
+  </script>
+</body>
+</html>
