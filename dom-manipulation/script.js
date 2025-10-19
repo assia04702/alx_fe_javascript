@@ -394,3 +394,4 @@ importFileInput.addEventListener("change", importFromJsonFile);
 populateCategories();
 filterQuotes();
 fetchQuotesFromServer(); // initial sync
+document.getElementById("syncButton").addEventListener("click", syncQuotes);
