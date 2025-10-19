@@ -161,6 +161,8 @@ function populateCategories() {
     .join("");
 }
 
+document.getElementById("syncButton").addEventListener("click", syncQuotes);
+
 // === Filter Quotes by Category ===
 function filterQuotes() {
   const selectedCategory = categoryFilter.value;
