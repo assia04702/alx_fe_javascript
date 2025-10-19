@@ -39,3 +39,71 @@ function addQuote() {
 
 // Event listener for the 'Show New Quote' button
 newQuoteButton.addEventListener("click", showRandomQuote);
+// === Initial Quotes Array ===
+let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
+
+// === DOM Elements ===
+const quoteList = document.getElementById("quoteList");
+const quoteInput = document.getElementById("newQuote");
+const addQuoteBtn = document.getElementById("addQuote");
+const exportBtn = document.getElementById("exportBtn");
+const importFileInput = document.getElementById("importFile");
+
+// === Save quotes to localStorage ===
+function saveQuotes() {
+  localStorage.setItem("quotes", JSON.stringify(quotes));
+}
+
+// === Display Quotes ===
+function displayQuotes() {
+  quoteList.innerHTML = "";
+  quotes.forEach((q) => {
+    const li = document.createElement("li");
+    li.textContent = q;
+    quoteList.appendChild(li);
+  });
+}
+
+// === Add New Quote ===
+function addQuote() {
+  const newQuote = quoteInput.value.trim();
+  if (newQuote !== "") {
+    quotes.push(newQuote);
+    saveQuotes();
+    displayQuotes();
+    quoteInput.value = "";
+  }
+}
+
+// === Export Quotes to JSON ===
+function exportToJsonFile() {
+  const jsonData = JSON.stringify(quotes, null, 2);
+  const blob = new Blob([jsonData], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quotes.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// === Import Quotes from JSON ===
+function importFromJsonFile(event) {
+  const fileReader = new FileReader();
+  fileReader.onload = function (e) {
+    const importedQuotes = JSON.parse(e.target.result);
+    quotes.push(...importedQuotes);
+    saveQuotes();
+    displayQuotes();
+    alert("Quotes imported successfully!");
+  };
+  fileReader.readAsText(event.target.files[0]);
+}
+
+// === Event Listeners ===
+addQuoteBtn.addEventListener("click", addQuote);
+exportBtn.addEventListener("click", exportToJsonFile);
+importFileInput.addEventListener("change", importFromJsonFile);
+
+// === Initialize ===
+displayQuotes();
